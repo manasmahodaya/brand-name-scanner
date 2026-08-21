@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brand Name Scanner — MVP</title>
+<style>
+:root{--ink:#17202a;--muted:#64748b;--paper:#f7f4ee;--card:#fff;--line:#ddd7cd;--accent:#ef7d32;--good:#18794e;--warn:#a66a00;--bad:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:34px 20px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:26px}
+h1{font-size:42px;line-height:1.05;margin:0 0 8px}.sub{color:var(--muted);max-width:700px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 28px #00000008}
+textarea{width:100%;min-height:125px;border:1px solid var(--line);border-radius:12px;padding:14px;font:15px inherit;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:white}.secondary{background:#eee9df;color:var(--ink)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:26px 0 12px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}.top{display:flex;justify-content:space-between;gap:10px}.name{font-size:24px;font-weight:800}.score{font-size:34px;font-weight:900;white-space:nowrap}.score small{font-size:13px;color:var(--muted);font-weight:700}.rec{font-size:12px;font-weight:800;letter-spacing:.08em;margin:6px 0 14px}.green{color:var(--good)}.orange{color:var(--warn)}.red{color:var(--bad)}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}.badge{padding:5px 8px;border-radius:999px;background:#f0ede6;font-size:12px}
+.bars div{display:grid;grid-template-columns:125px 1fr 35px;gap:8px;align-items:center;margin:7px 0;font-size:12px}.bar{height:7px;background:#ece8df;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--accent)}
+.actions{display:flex;gap:8px;margin-top:14px}.empty{padding:35px;text-align:center;color:var(--muted)}
+footer{margin-top:28px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>Brand Name Scanner</h1>
+      <div class="sub">Score names before you build the brand. Availability signals + competition + brand fit in one place.</div>
+    </div>
+    <div><strong>MVP v0.1</strong><br><span class="note">Availability is confidence-based.</span></div>
+  </div>
+
+  <div class="panel">
+    <strong>Enter candidate names</strong>
+    <textarea id="names" placeholder="One name per line, e.g.
+DhyaanSe
+Nazar
+Pakad
+RukJa
+DekhLe"></textarea>
+    <div class="row">
+      <button class="primary" onclick="scan()">Scan & Score</button>
+      <button class="secondary" onclick="generatePool()">Load 30 Indian/Hinglish candidates</button>
+      <button class="secondary" onclick="copyShortlist()">Copy shortlist</button>
+    </div>
+    <div class="note">Scores are heuristic until live domain/social/competition checks complete. Availability can change; this is not trademark/legal clearance.</div>
+  </div>
+
+  <div class="toolbar">
+    <strong id="count">No results yet</strong>
+    <select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="name">Sort: name</option></select>
+  </div>
+  <div id="results" class="grid"><div class="panel empty">Enter names and scan them.</div></div>
+
+  <footer>Brand Readiness = heuristic score. Domain/social availability can change and should be manually confirmed before purchase or launch.</footer>
+</div>
+
+<script>
+const pool=["Sunta","SuntaListen","SuntaListenHook","DhyaanSe","Nazar","Pakad","RukJa","RukoZara","DekhLe","SunLe","SochLe","BaatPakad","NazarPakad","DhyaanIQ","TadkaAI","KyaScene","RokTok","PakadLe","Chaska","BaatWise","DekhZara","AngleIQ","Snapline","Stopline","ScrollIQ","HookPilot","HookWise","HookScore","StoryTadka","BaatLab","ContentJugaad","IdeaPakad"];
+let data=[];
+
+function norm(s){return s.trim().replace(/[^a-zA-Z0-9]/g,"").toLowerCase()}
+function heuristic(name){
+  const n=norm(name), len=n.length;
+  const pronounce=(len>=5&&len<=12)?9:(len<=15?7:5);
+  const memorable=(len<=11)?9:(len<=15?7:5);
+  const expansion=(/(hook|instagram|reel|tiktok)/i.test(n))?6:9;
+  const india=(/(sunta|ruk|dhyaan|nazar|pakad|baat|dekh|sun|soch|tadka|jugaad|chaska|kya|zara|rok)/i.test(n))?10:6;
+  const uniqueness=(["nazar","pakad","opener"].includes(n))?5:8;
+  return {pronounce,memorable,expansion,india,uniqueness};
+}
+function domainScore(status){
+  if(!status) return 7;
+  if(status==="AVAILABLE") return 10;
+  if(status==="REGISTERED") return 3;
+  return 6;
+}
+async function rdap(domain){
+  try{
+    const r=await fetch("https://rdap.org/domain/"+domain,{headers:{Accept:"application/rdap+json"}});
+    if(r.status===404) return "AVAILABLE";
+    if(r.ok) return "REGISTERED";
+    return "UNKNOWN";
+  }catch(e){return "UNKNOWN"}
+}
+function scoreItem(x){
+  // Availability/social/competition remain conservative until verified.
+  const domain=domainScore(x.com);
+  const social=7;       // manual verification required
+  const conflict=7;     // web search required
+  const h=x.h;
+  const total=(domain*.20)+(social*.15)+(conflict*.15)+(h.memorable*.10)+(h.pronounce*.10)+(h.uniqueness*.10)+(h.india*.10)+(h.expansion*.10);
+  return Math.min(10,Math.max(0,total));
+}
+function recommendation(s){return s>=9?["BUY","green"]:s>=8?["SHORTLIST","green"]:s>=7?["INVESTIGATE","orange"]:["REJECT","red"]}
+
+async function scan(){
+  const names=[...new Set(document.getElementById("names").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean))].slice(0,30);
+  data=names.map(name=>({name,h:heuristic(name),score:0,com:null,short:false}));
+  data.forEach(x=>x.score=scoreItem(x));
+  render();
+  for(const item of data){
+    item.com=await rdap(norm(item.name)+".com");
+    item.score=scoreItem(item);
+    render();
+  }
+}
+function render(){
+  const sort=document.getElementById("sort").value;
+  const arr=[...data].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):b.score-a.score);
+  document.getElementById("count").textContent=arr.length+" names scanned";
+  document.getElementById("results").innerHTML=arr.length?arr.map(x=>{
+    const [rec,cls]=recommendation(x.score), h=x.h;
+    const score=Math.round(x.score*10)/10;
+    const com=x.com?x.com:"CHECKING…";
+    return `<div class="card">
+      <div class="top"><div><div class="name">${esc(x.name)}</div><div class="rec ${cls}">${rec}</div></div><div class="score">${score.toFixed(1)}<small>/10</small></div></div>
+      <div class="badges">
+        <span class="badge">.com: ${com}</span>
+        <span class="badge">Instagram: MANUAL CHECK</span>
+        <span class="badge">X: MANUAL CHECK</span>
+      </div>
+      <div class="bars">
+        ${bar("Domain",domainScore(x.com))}
+        ${bar("Social",7)}
+        ${bar("Competition",7)}
+        ${bar("Memorability",h.memorable)}
+        ${bar("Pronunciation",h.pronounce)}
+        ${bar("Uniqueness",h.uniqueness)}
+        ${bar("India fit",h.india)}
+        ${bar("Expansion",h.expansion)}
+      </div>
+      <div class="note"><strong>Why:</strong> ${reason(x,h,score)}</div>
+      <div class="actions">
+        <button class="secondary" onclick="openSearch('${esc(x.name)}')">Search web</button>
+        <button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button>
+      </div>
+    </div>`
+  }).join(""):'<div class="panel empty">Enter names and scan them.</div>';
+}
+function reason(x,h,score){
+  const positives=[];
+  if(h.india>=9) positives.push("strong India/Hinglish fit");
+  if(h.memorable>=9) positives.push("easy to remember");
+  if(h.expansion>=9) positives.push("can expand beyond hooks");
+  if(h.uniqueness>=8) positives.push("reasonably distinctive");
+  if(x.com==="AVAILABLE") positives.push(".com appears available");
+  return positives.slice(0,3).join("; ") || "needs stronger differentiation or more verification";
+}
+function bar(label,v){return `<div><span>${label}</span><span class="bar"><span class="fill" style="width:${v*10}%"></span></span><strong>${v}</strong></div>`}
+function toggleShort(n){const x=data.find(a=>a.name===n);if(x)x.short=!x.short;render()}
+function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
+function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand AI SaaS'),"_blank")}
+function generatePool(){document.getElementById("names").value=pool.join("\n")}
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+</script>
+</body>
+</html>
