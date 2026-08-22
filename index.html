@@ -21,8 +21,26 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .badge{padding:5px 8px;border-radius:999px;background:#f0ede6;font-size:11px}.bars div{display:grid;grid-template-columns:120px 1fr 32px;gap:8px;align-items:center;margin:6px 0;font-size:11px}.bar{height:7px;background:#ece8df;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--accent)}
 .domain-box{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fbfaf7}.domain-head{display:flex;justify-content:space-between}.domain-row{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #eee9df}.domain-name{font-weight:800}.status{font-size:11px;font-weight:900}.available{color:var(--good)}.registered{color:var(--bad)}.unknown{color:var(--warn)}.domain-btn{font-size:10px;padding:6px 8px;background:#eee9df;color:var(--ink);text-decoration:none;border-radius:8px;font-weight:800}.callout{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f7f1e8;font-size:12px}.progress{height:7px;background:#ece8df;border-radius:99px;overflow:hidden;margin-top:9px}.progress span{display:block;height:100%;background:var(--accent);width:0}.empty{text-align:center;color:var(--muted);padding:35px}footer{margin-top:28px;font-size:12px;color:var(--muted)}
 @media(max-width:680px){h1{font-size:34px}.hero{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+
+.compare-wrap{margin:18px 0 22px}
+.compare-panel{background:var(--card);border:2px solid var(--accent);border-radius:16px;padding:18px;box-shadow:0 8px 28px #00000008}
+.compare-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}
+.compare-title{font-size:22px;font-weight:900}
+.compare-sub{color:var(--muted);font-size:13px;margin-top:3px}
+.compare-table-wrap{overflow-x:auto;margin-top:15px}
+.compare-table{width:100%;border-collapse:collapse;min-width:720px;font-size:13px}
+.compare-table th,.compare-table td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left;position:sticky;left:0;background:var(--card);z-index:1}
+.compare-table th{font-size:12px;color:var(--muted)}
+.compare-name{font-weight:900;font-size:15px;color:var(--ink)}
+.compare-best{font-weight:900}
+.view-card{margin-top:16px;padding:15px;border-radius:12px;background:#f7f1e8}
+.view-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.view-row{margin-top:8px}
+.mini-tag{display:inline-block;padding:4px 7px;border-radius:999px;background:#eee9df;font-size:10px;font-weight:900;margin-right:5px}
+.compare-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.2.2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -47,7 +65,11 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 <div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="generatePool()">Load 30 Indian/Hinglish candidates</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
 <div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
 <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
-<div class="toolbar"><b id="count">No results yet</b><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
+<div class="toolbar"><div><b id="count">No results yet</b><div class="note" style="margin-top:3px">Shortlist 2–5 names to compare the finalists.</div></div><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
+<div id="compareWrap" class="compare-wrap" style="display:none">
+  <div id="comparePanel"></div>
+</div>
+
 <div id="results" class="grid"><div class="panel empty">Enter names and scan them.</div></div>
 <footer>Sunta scores are heuristic brand-readiness signals. Context fit refines suitability but does not replace the core brand score. Domain status is not legal/trademark clearance. Domain availability can change and should be confirmed at the registrar.</footer>
 </div>
@@ -189,12 +211,119 @@ data=names.map(name=>{const h=heuristic(name);const base=brandScore(h);const ite
 const jobs=[];data.forEach(item=>TLDS.forEach(tld=>jobs.push({item,tld})));let done=0;showProgress(true,0,jobs.length);
 for(let i=0;i<jobs.length;i+=6){await Promise.all(jobs.slice(i,i+6).map(async j=>{j.item.domains[j.tld]=await rdap(norm(j.item.name)+"."+j.tld);done++;showProgress(true,done,jobs.length);render()}))}
 showProgress(false);scanning=false;btn.disabled=false;btn.textContent="Scan & Score";render()}
+
+function shortlisted(){
+  return data.filter(x=>x.short).sort((a,b)=>b.score-a.score);
+}
+
+function domainLabel(x){
+  const states=TLDS.map(t=>x.domains?.[t]);
+  if(states.includes("AVAILABLE")) return "Strong";
+  if(states.includes("UNKNOWN")) return "Check";
+  if(states.some(s=>s==="REGISTERED")) return "Limited";
+  return "Checking";
+}
+
+function scoreCell(value, best){
+  return `<span class="${best?"compare-best":""}">${Number(value).toFixed(1)}</span>`;
+}
+
+function comparisonView(items){
+  const top=items[0];
+  const best=(key)=>Math.max(...items.map(x=>Number(x.h?.[key]||0)));
+  const rows=[
+    ["Overall Sunta score", items.map(x=>x.score), "score"],
+    ["Memorability", items.map(x=>x.h.memorable), "memorable"],
+    ["Pronunciation", items.map(x=>x.h.pronounce), "pronounce"],
+    ["India / Hinglish fit", items.map(x=>x.h.india), "india"],
+    ["Expansion potential", items.map(x=>x.h.expansion), "expansion"],
+    ["Uniqueness", items.map(x=>x.h.uniqueness), "uniqueness"],
+    ["Brandability", items.map(x=>x.h.brandability), "brandability"],
+    ["Context fit", items.map(x=>x.contextFit||8), "contextFit"]
+  ];
+
+  const header=items.map(x=>`<th><div class="compare-name">${esc(x.name)}</div><div class="mini-tag">${recommendation(x.score)[0]}</div></th>`).join("");
+  const body=rows.map(([label,vals,key])=>{
+    const mx=Math.max(...vals);
+    return `<tr><td><b>${label}</b></td>${vals.map(v=>`<td>${scoreCell(v,v===mx)}</td>`).join("")}</tr>`;
+  }).join("");
+
+  const domains=items.map(x=>`<td><span class="mini-tag">${domainLabel(x)}</span><br><small>${bestDomain(x).replace(/<[^>]*>/g,"")}</small></td>`).join("");
+
+  const winner=items.reduce((a,b)=>b.score>a.score?b:a,items[0]);
+  const second=items.find(x=>x!==winner);
+  const context=getBusinessContext();
+  let why="It has the strongest overall balance across the current brand signals.";
+  if(winner.contextFit>=9) why="It combines strong overall brand signals with a strong fit for the business context you provided.";
+  else if(winner.h.expansion>=9) why="It has a strong balance of memorability and room to expand beyond the initial offering.";
+
+  let tradeoff="";
+  if(second){
+    if(second.h.pronounce>winner.h.pronounce+0.4) tradeoff=`${esc(second.name)} is easier to pronounce, so it may be worth choosing if simplicity matters more.`;
+    else if(second.h.memorable>winner.h.memorable+0.4) tradeoff=`${esc(second.name)} is slightly more memorable, so it may be stronger if instant recall is your priority.`;
+    else if(second.contextFit>winner.contextFit+0.4) tradeoff=`${esc(second.name)} has a stronger contextual fit, so reconsider it if the business positioning changes.`;
+    else tradeoff=`${esc(second.name)} is the closest alternative and is worth keeping as a backup.`;
+  }
+
+  const description=context.description
+    ? `Based on: “${esc(context.description)}”`
+    : `Based on the ${esc(context.type)} context you selected.`;
+
+  return `
+    <div class="compare-panel">
+      <div class="compare-head">
+        <div>
+          <div class="compare-title">Compare My Shortlist</div>
+          <div class="compare-sub">${items.length} finalists · ${description}</div>
+        </div>
+        <button class="secondary" onclick="closeComparison()">Close</button>
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Factor</th>${header}</tr></thead>
+          <tbody>
+            ${body}
+            <tr><td><b>Domain opportunity</b></td>${domains}</tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="view-card">
+        <div class="view-title">Sunta's View</div>
+        <div class="view-row"><b>If I were choosing, I'd lean toward ${esc(winner.name)}.</b></div>
+        <div class="view-row">${why}</div>
+        <div class="view-row"><b>But:</b> ${tradeoff}</div>
+        <div class="view-row"><span class="mini-tag">Recommendation, not a verdict</span> Sunta provides the evidence and trade-offs. You make the final decision.</div>
+      </div>
+      <div class="compare-actions">
+        <button class="primary" onclick="openSearch('${esc(winner.name)}')">Research ${esc(winner.name)} →</button>
+        <button class="secondary" onclick="copyShortlist()">Copy shortlist</button>
+      </div>
+    </div>`;
+}
+
+function updateCompareUI(){
+  const items=shortlisted();
+  const wrap=document.getElementById("compareWrap");
+  const panel=document.getElementById("comparePanel");
+  if(items.length<2){
+    wrap.style.display="none";
+    panel.innerHTML="";
+    return;
+  }
+  wrap.style.display="block";
+  panel.innerHTML=comparisonView(items.slice(0,5));
+}
+
+function closeComparison(){
+  document.getElementById("compareWrap").style.display="none";
+}
+
 function render(){const sort=document.getElementById("sort").value,arr=[...data].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="domain"?domainOpportunity(b)-domainOpportunity(a)||b.score-a.score:sort==="context"?(b.contextFit||0)-(a.contextFit||0)||b.score-a.score:b.score-a.score);document.getElementById("count").textContent=arr.length+" names scanned";
 document.getElementById("results").innerHTML=arr.length?arr.map((x,i)=>{const[rec,cls]=recommendation(x.score),h=x.h,winner=i===0&&sort==="score";return `<div class="card ${winner?"winner":""}"><div class="top"><div><div class="rank">#${i+1} ${winner?"🏆":""}</div><div class="name">${esc(x.name)}</div><div class="rec ${cls}">${rec}</div></div><div class="score">${x.score.toFixed(1)}<small>/10</small></div></div>
 <div class="badges"><span class="badge">Brand score: ${x.score.toFixed(1)}</span><span class="badge">Context fit: ${(x.contextFit||8).toFixed(1)}</span><span class="badge">Instagram: MANUAL</span><span class="badge">Competition: HEURISTIC</span></div>
 <div class="bars">${bar("Memorability",h.memorable)}${bar("Pronunciation",h.pronounce)}${bar("Uniqueness",h.uniqueness)}${bar("India fit",h.india)}${bar("Expansion",h.expansion)}${bar("Brandability",h.brandability)}</div>
 <div class="domain-box"><div class="domain-head"><b>🌐 Domain opportunities</b><span class="note">RDAP signal</span></div>${TLDS.map(t=>domainRow(x,t)).join("")}<div class="callout"><b>Domain opportunity:</b> ${bestDomain(x)}</div></div>
-<div class="note"><b>Why:</b> ${reason(x,h)}. <b>Context:</b> ${x.contextNote||"Add your business context for a more relevant suitability assessment."}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter names and scan them.</div>'}
+<div class="note"><b>Why:</b> ${reason(x,h)}. <b>Context:</b> ${x.contextNote||"Add your business context for a more relevant suitability assessment."}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter names and scan them.</div>';updateCompareUI()}
 function domainRow(x,t){const d=norm(x.name)+"."+t,s=x.domains?.[t]||"CHECKING",c=s==="AVAILABLE"?"available":s==="REGISTERED"?"registered":"unknown",l=s==="AVAILABLE"?"AVAILABLE":s==="REGISTERED"?"REGISTERED":"CHECK";return `<div class="domain-row"><span class="domain-name">${d}</span><span class="status ${c}">${l}</span><a class="domain-btn" href="${namecheapUrl(d)}" target="_blank" rel="noopener">Check ${t} →</a></div>`}
 function bestDomain(x){const a=TLDS.find(t=>x.domains?.[t]==="AVAILABLE"),u=TLDS.find(t=>x.domains?.[t]==="UNKNOWN");if(a)return `<b>${norm(x.name)}.${a}</b> <span class="available">is showing as available</span>`;if(u)return `<b>${norm(x.name)}.${u}</b> <span class="unknown">needs confirmation</span>`;if(TLDS.some(t=>x.domains?.[t]))return `<span class="registered">No checked TLD is showing as available</span>`;return `<span class="unknown">checking…</span>`}
 function reason(x,h){const p=[];if(h.india>=9)p.push("strong India/Hinglish fit");if(h.memorable>=9)p.push("easy to remember");if(h.expansion>=9)p.push("can expand beyond one format");if(h.uniqueness>=8)p.push("reasonably distinctive");if(domainOpportunity(x)>=10)p.push("a checked domain appears available");return p.slice(0,3).join("; ")||"needs stronger differentiation or verification"}
