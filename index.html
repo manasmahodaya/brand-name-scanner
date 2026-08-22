@@ -39,8 +39,12 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .view-row{margin-top:8px}
 .mini-tag{display:inline-block;padding:4px 7px;border-radius:999px;background:#eee9df;font-size:10px;font-weight:900;margin-right:5px}
 .compare-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+.compare-cta{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.compare-cta strong{font-size:14px}
+.compare-cta .note{margin-top:2px}
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.3</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.4</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -65,7 +69,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 <div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
 <div class="note">Enter 3–10 names of your own. The examples in the box are only placeholders; Sunta will scan only the names you enter.</div><div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
 <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
-<div class="toolbar"><div><b id="count">No results yet</b><div class="note" style="margin-top:3px">Shortlist 2–5 names to compare the finalists.</div></div><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
+<div class="toolbar"><div><b id="count">No results yet</b><div class="note" style="margin-top:3px">Shortlist 2–5 names. Sunta will offer a side-by-side comparison when you're ready.</div></div><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
 <div id="compareWrap" class="compare-wrap" style="display:none">
   <div id="comparePanel"></div>
 </div>
@@ -321,11 +325,21 @@ function updateCompareUI(){
     return;
   }
   wrap.style.display="block";
-  panel.innerHTML=comparisonView(items.slice(0,5));
+  panel.innerHTML=`<div class="compare-cta">
+    <div><strong>${items.length} names shortlisted</strong><div class="note">Compare your finalists side-by-side before making a decision.</div></div>
+    <button class="primary" onclick="showComparison()">Compare My Shortlist →</button>
+  </div>`;
+}
+
+function showComparison(){
+  const items=shortlisted();
+  if(items.length<2)return;
+  document.getElementById("compareWrap").style.display="block";
+  document.getElementById("comparePanel").innerHTML=comparisonView(items.slice(0,5));
 }
 
 function closeComparison(){
-  document.getElementById("compareWrap").style.display="none";
+  updateCompareUI();
 }
 
 function render(){const sort=document.getElementById("sort").value,arr=[...data].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="domain"?domainOpportunity(b)-domainOpportunity(a)||b.score-a.score:sort==="context"?(b.contextFit||0)-(a.contextFit||0)||b.score-a.score:b.score-a.score);document.getElementById("count").textContent=arr.length+" names scanned";
@@ -338,7 +352,16 @@ function domainRow(x,t){const d=norm(x.name)+"."+t,s=x.domains?.[t]||"CHECKING",
 function bestDomain(x){const a=TLDS.find(t=>x.domains?.[t]==="AVAILABLE"),u=TLDS.find(t=>x.domains?.[t]==="UNKNOWN");if(a)return `<b>${norm(x.name)}.${a}</b> <span class="available">is showing as available</span>`;if(u)return `<b>${norm(x.name)}.${u}</b> <span class="unknown">needs confirmation</span>`;if(TLDS.some(t=>x.domains?.[t]))return `<span class="registered">No checked TLD is showing as available</span>`;return `<span class="unknown">checking…</span>`}
 function reason(x,h){const p=[];if(h.india>=9)p.push("strong India/Hinglish fit");if(h.memorable>=9)p.push("easy to remember");if(h.expansion>=9)p.push("can expand beyond one format");if(h.uniqueness>=8)p.push("reasonably distinctive");if(domainOpportunity(x)>=10)p.push("a checked domain appears available");return p.slice(0,3).join("; ")||"needs stronger differentiation or verification"}
 function bar(l,v){return `<div><span>${l}</span><span class="bar"><span class="fill" style="width:${v*10}%"></span></span><strong>${v}</strong></div>`}
-function toggleShort(n){const x=data.find(a=>a.name===n);if(x)x.short=!x.short;render()}function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
+function toggleShort(n){
+  const x=data.find(a=>a.name===n);
+  if(!x)return;
+  if(!x.short && shortlisted().length>=5){
+    alert("You can compare up to 5 shortlisted names.");
+    return;
+  }
+  x.short=!x.short;
+  render();
+}function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
 function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function showProgress(show,done=0,total=1){const w=document.getElementById("progressWrap");if(!show){w.style.display="none";return}w.style.display="block";document.getElementById("progressText").textContent=`Checking domains… ${done} of ${total}`;document.getElementById("progressBar").style.width=done/total*100+"%"}
 </script></body></html>
