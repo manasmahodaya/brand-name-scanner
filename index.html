@@ -1,104 +1,51 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sunta — Brand Name Scanner</title>
 <style>
 :root{--ink:#17202a;--muted:#64748b;--paper:#f7f4ee;--card:#fff;--line:#ddd7cd;--accent:#ef7d32;--good:#18794e;--warn:#a66a00;--bad:#b42318}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif}
-.wrap{max-width:1220px;margin:auto;padding:30px 18px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}
-h1{font-size:42px;line-height:1.05;margin:0 0 8px}.sub{color:var(--muted);max-width:760px}.version{text-align:right}
-.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px #00000008}.panel{padding:18px}
-textarea{width:100%;min-height:125px;border:1px solid var(--line);border-radius:12px;padding:14px;font:15px inherit;resize:vertical}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
-.primary{background:var(--accent);color:#fff}.secondary{background:#eee9df;color:var(--ink)}.note{font-size:12px;color:var(--muted);margin-top:9px}
-.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:24px 0 12px;flex-wrap:wrap}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}.card{padding:17px}.card.winner{border:2px solid var(--accent)}
-.top{display:flex;justify-content:space-between;gap:10px}.rank{font-size:12px;font-weight:900}.name{font-size:24px;font-weight:900}
-.score{font-size:34px;font-weight:900;white-space:nowrap}.score small{font-size:13px;color:var(--muted);font-weight:700}.rec{font-size:12px;font-weight:900;letter-spacing:.08em;margin:6px 0 12px}
-.green{color:var(--good)}.orange{color:var(--warn)}.red{color:var(--bad)}.badges{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
-.badge{padding:5px 8px;border-radius:999px;background:#f0ede6;font-size:11px}.bars div{display:grid;grid-template-columns:120px 1fr 32px;gap:8px;align-items:center;margin:6px 0;font-size:11px}
-.bar{height:7px;background:#ece8df;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--accent)}
-.actions{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}.domain-box{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fbfaf7}
-.domain-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.domain-title{font-weight:900}.domain-note{font-size:10px;color:var(--muted)}
-.domain-row{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #eee9df}.domain-row:first-of-type{border-top:0}
-.domain-name{font-weight:800}.status{font-size:11px;font-weight:900}.available{color:var(--good)}.registered{color:var(--bad)}.unknown{color:var(--warn)}
-.domain-btn{font-size:10px;padding:6px 8px;background:#eee9df;color:var(--ink);text-decoration:none;border-radius:8px;font-weight:800}.winner-callout{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f7f1e8;font-size:12px}
-.progress{height:7px;background:#ece8df;border-radius:99px;overflow:hidden;margin-top:9px}.progress span{display:block;height:100%;background:var(--accent);width:0}
-.empty{padding:35px;text-align:center;color:var(--muted)}footer{margin-top:28px;font-size:12px;color:var(--muted)}
-@media(max-width:680px){h1{font-size:34px}.hero{align-items:flex-start;flex-direction:column}.version{text-align:left}.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hero"><div><h1>Sunta</h1><div class="sub"><strong>Brand Name Scanner</strong> — score names, compare brand fit and check domain opportunities before you build.</div></div><div class="version"><strong>V1.2.1</strong><br><span class="note">Domain Intelligence</span></div></div>
-  <div class="panel">
-    <strong>Enter candidate names</strong>
-    <textarea id="names" placeholder="One name per line, e.g.
-DhyaanSe
-RukoZara
-DekhLe
-Sunta
-Nazar"></textarea>
-    <div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="generatePool()">Load 30 Indian/Hinglish candidates</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
-    <div class="note">Domain status is an automated RDAP signal, not a guarantee of registration. Social, trademark and competition checks remain manual/heuristic.</div>
-    <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div>
-  </div>
-  <div class="toolbar"><strong id="count">No results yet</strong><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="name">Sort: name</option></select></div>
-  <div id="results" class="grid"><div class="panel empty">Enter names and scan them.</div></div>
-  <footer>Sunta scores are heuristic brand-readiness signals, not legal/trademark clearance. Domain availability can change and should be confirmed at the registrar before purchase.</footer>
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Arial,sans-serif}.wrap{max-width:1220px;margin:auto;padding:30px 18px}
+.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:22px}h1{font-size:42px;line-height:1.05;margin:0 0 8px}.sub,.note{color:var(--muted)}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px #00000008}.panel{padding:18px}
+textarea{width:100%;min-height:125px;border:1px solid var(--line);border-radius:12px;padding:14px;font:15px Arial;resize:vertical}.row,.actions,.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:white}.secondary{background:#eee9df;color:var(--ink)}
+.toolbar{display:flex;justify-content:space-between;margin:24px 0 12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}.card{padding:17px}.winner{border:2px solid var(--accent)}
+.top{display:flex;justify-content:space-between;gap:10px}.rank{font-size:12px;font-weight:900}.name{font-size:24px;font-weight:900}.score{font-size:34px;font-weight:900}.score small{font-size:13px;color:var(--muted)}.rec{font-size:12px;font-weight:900;letter-spacing:.08em;margin:6px 0 12px}.green{color:var(--good)}.orange{color:var(--warn)}.red{color:var(--bad)}
+.badge{padding:5px 8px;border-radius:999px;background:#f0ede6;font-size:11px}.bars div{display:grid;grid-template-columns:120px 1fr 32px;gap:8px;align-items:center;margin:6px 0;font-size:11px}.bar{height:7px;background:#ece8df;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--accent)}
+.domain-box{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fbfaf7}.domain-head{display:flex;justify-content:space-between}.domain-row{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #eee9df}.domain-name{font-weight:800}.status{font-size:11px;font-weight:900}.available{color:var(--good)}.registered{color:var(--bad)}.unknown{color:var(--warn)}.domain-btn{font-size:10px;padding:6px 8px;background:#eee9df;color:var(--ink);text-decoration:none;border-radius:8px;font-weight:800}.callout{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f7f1e8;font-size:12px}.progress{height:7px;background:#ece8df;border-radius:99px;overflow:hidden;margin-top:9px}.progress span{display:block;height:100%;background:var(--accent);width:0}.empty{text-align:center;color:var(--muted);padding:35px}footer{margin-top:28px;font-size:12px;color:var(--muted)}
+@media(max-width:680px){h1{font-size:34px}.hero{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.2.2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="panel"><b>Enter candidate names</b><textarea id="names" placeholder="One name per line, e.g.&#10;DhyaanSe&#10;RukoZara&#10;DekhLe&#10;Sunta&#10;Nazar"></textarea>
+<div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="generatePool()">Load 30 Indian/Hinglish candidates</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
+<div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
+<div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
+<div class="toolbar"><b id="count">No results yet</b><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="name">Sort: name</option></select></div>
+<div id="results" class="grid"><div class="panel empty">Enter names and scan them.</div></div>
+<footer>Sunta scores are heuristic brand-readiness signals, not legal/trademark clearance. Domain availability can change and should be confirmed at the registrar.</footer>
 </div>
 <script>
-const pool=["Sunta","SuntaListen","SuntaListenHook","DhyaanSe","Nazar","Pakad","RukJa","RukoZara","DekhLe","SunLe","SochLe","BaatPakad","NazarPakad","DhyaanIQ","TadkaAI","KyaScene","RokTok","PakadLe","Chaska","BaatWise","DekhZara","AngleIQ","Snapline","Stopline","ScrollIQ","HookPilot","HookWise","HookScore","StoryTadka","BaatLab","ContentJugaad","IdeaPakad"];
-const TLDS=["com","in","ai","co"];let data=[],scanning=false;
-function norm(s){return s.trim().replace(/[^a-zA-Z0-9]/g,"").toLowerCase()}
-function heuristic(name){
- const n=norm(name),len=n.length,v=(n.match(/[aeiou]/g)||[]).length/Math.max(len,1),repeat=/(.)\1/.test(n);
- const pronounce=len>=5&&len<=11?9:(len===4||len===12?8:6);
- let memorable=len>=4&&len<=12?9:6;if(repeat||v<.2||v>.65)memorable=7;
- const expansion=/(hook|instagram|reel|tiktok|content)/i.test(n)?6:9;
- const india=/(sunta|ruk|dhyaan|nazar|pakad|baat|dekh|sun|soch|tadka|jugaad|chaska|kya|zara|rok)/i.test(n)?10:6;
- const generic=["nazar","pakad","sunta","hook","score","snap","story","content","angle"].includes(n);
- const uniqueness=generic?5:/(ai|iq|lab|wise|pilot|line)$/.test(n)?7:9;
- const brandability=len>=5&&len<=11&&v>=.25&&v<=.6?9:7;
- return{pronounce,memorable,expansion,india,uniqueness,brandability};
-}
-function statusScore(s){return s==="AVAILABLE"?10:s==="REGISTERED"?3:6}
-function domainOpportunity(x){return Math.max(...TLDS.map(t=>statusScore(x.domains?.[t])))}
-function scoreItem(x){const h=x.h,d=domainOpportunity(x);return Math.min(10,Math.max(0,d*.18+7*.10+7*.12+h.memorable*.13+h.pronounce*.12+h.uniqueness*.13+h.india*.10+h.expansion*.07+h.brandability*.05))}
-function recommendation(s){return s>=9?["BUY","green"]:s>=8?["SHORTLIST","green"]:s>=7?["INVESTIGATE","orange"]:["REJECT","red"]}
-async function rdap(domain){try{const r=await fetch("https://rdap.org/domain/"+encodeURIComponent(domain),{headers:{Accept:"application/rdap+json"}});if(r.status===404)return"AVAILABLE";if(r.ok)return"REGISTERED";return"UNKNOWN"}catch(e){return"UNKNOWN"}}
-function namecheapUrl(domain){return"https://www.namecheap.com/domains/registration/results.aspx?domain="+encodeURIComponent(domain)}
-async function scan(){
- if(scanning)return;const names=[...new Set(document.getElementById("names").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean))].slice(0,30);if(!names.length)return;
- scanning=true;const btn=document.getElementById("scanBtn");btn.disabled=true;btn.textContent="Scanning…";
- data=names.map(name=>({name,h:heuristic(name),score:0,domains:{},short:false}));render();
- const jobs=[];data.forEach(item=>TLDS.forEach(tld=>jobs.push({item,tld})));let done=0;showProgress(true,0,jobs.length);
- for(let start=0;start<jobs.length;start+=8){const batch=jobs.slice(start,start+8);await Promise.all(batch.map(async j=>{j.item.domains[j.tld]=await rdap(norm(j.item.name)+"."+j.tld);done++;j.item.score=scoreItem(j);showProgress(true,done,jobs.length)}));render()}
- showProgress(false);scanning=false;btn.disabled=false;btn.textContent="Scan & Score";render();
-}
-function render(){
- const sort=document.getElementById("sort").value,arr=[...data].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="domain"?domainOpportunity(b)-domainOpportunity(a):b.score-a.score);
- document.getElementById("count").textContent=arr.length+" names scanned";
- document.getElementById("results").innerHTML=arr.length?arr.map((x,i)=>{const[rec,cls]=recommendation(x.score),h=x.h,score=Math.round(x.score*10)/10,winner=i===0&&sort==="score";
- return `<div class="card ${winner?"winner":""}"><div class="top"><div><div class="rank">#${i+1} ${winner?"🏆":""}</div><div class="name">${esc(x.name)}</div><div class="rec ${cls}">${rec}</div></div><div class="score">${score.toFixed(1)}<small>/10</small></div></div>
- <div class="badges"><span class="badge">Domain: ${domainLabel(x)}</span><span class="badge">Instagram: MANUAL</span><span class="badge">Competition: HEURISTIC</span></div>
- <div class="bars">${bar("Memorability",h.memorable)}${bar("Pronunciation",h.pronounce)}${bar("Uniqueness",h.uniqueness)}${bar("India fit",h.india)}${bar("Expansion",h.expansion)}${bar("Brandability",h.brandability)}</div>
- <div class="domain-box"><div class="domain-head"><span class="domain-title">🌐 Domain opportunities</span><span class="domain-note">Live RDAP signal</span></div>${TLDS.map(t=>domainRow(x,t)).join("")}<div class="winner-callout"><strong>Best domain opportunity:</strong> ${bestDomain(x)}</div></div>
- <div class="note"><strong>Why:</strong> ${reason(x,h)}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter names and scan them.</div>';
-}
-function domainLabel(x){const s=TLDS.map(t=>x.domains?.[t]);return s.includes("AVAILABLE")?"OPPORTUNITY FOUND":s.includes("UNKNOWN")?"CHECK":"REGISTERED"}
+const pool=["Sunta","SuntaListen","SuntaListenHook","DhyaanSe","Nazar","Pakad","RukJa","RukoZara","DekhLe","SunLe","SochLe","BaatPakad","NazarPakad","DhyaanIQ","TadkaAI","KyaScene","RokTok","PakadLe","Chaska","BaatWise","DekhZara","AngleIQ","Snapline","Stopline","ScrollIQ","HookPilot","HookWise","HookScore","StoryTadka","BaatLab","ContentJugaad","IdeaPakad"],TLDS=["com","in","ai","co"];let data=[],scanning=false;
+const norm=s=>s.trim().replace(/[^a-zA-Z0-9]/g,"").toLowerCase();
+function heuristic(name){const n=norm(name),l=n.length,v=(n.match(/[aeiou]/g)||[]).length/Math.max(l,1),rep=/(.)\1/.test(n);let memorable=l>=4&&l<=12?9:6;if(rep||v<.2||v>.65)memorable=7;return{pronounce:l>=5&&l<=11?9:(l===4||l===12?8:6),memorable,expansion:/(hook|instagram|reel|tiktok|content)/i.test(n)?6:9,india:/(sunta|ruk|dhyaan|nazar|pakad|baat|dekh|sun|soch|tadka|jugaad|chaska|kya|zara|rok)/i.test(n)?10:6,uniqueness:["nazar","pakad","sunta","hook","score","snap","story","content","angle"].includes(n)?5:/(ai|iq|lab|wise|pilot|line)$/i.test(n)?7:9,brandability:l>=5&&l<=11&&v>=.25&&v<=.6?9:7}}
+function brandScore(h){return Math.min(10,Math.max(0,h.memorable*.22+h.pronounce*.18+h.uniqueness*.20+h.india*.15+h.expansion*.13+h.brandability*.12))}
+function statusScore(s){return s==="AVAILABLE"?10:s==="REGISTERED"?3:6}function domainOpportunity(x){return Math.max(...TLDS.map(t=>statusScore(x.domains?.[t])))}function recommendation(s){return s>=9?["BUY","green"]:s>=8?["SHORTLIST","green"]:s>=7?["INVESTIGATE","orange"]:["REJECT","red"]}
+async function rdap(domain){const c=new AbortController(),timer=setTimeout(()=>c.abort(),4500);try{const r=await fetch("https://rdap.org/domain/"+encodeURIComponent(domain),{headers:{Accept:"application/rdap+json"},signal:c.signal});if(r.status===404)return"AVAILABLE";if(r.ok)return"REGISTERED";return"UNKNOWN"}catch(e){return"UNKNOWN"}finally{clearTimeout(timer)}}
+const namecheapUrl=d=>"https://www.namecheap.com/domains/registration/results.aspx?domain="+encodeURIComponent(d);
+async function scan(){if(scanning)return;const names=[...new Set(document.getElementById("names").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean))].slice(0,30);if(!names.length)return;scanning=true;const btn=document.getElementById("scanBtn");btn.disabled=true;btn.textContent="Scanning…";
+data=names.map(name=>{const h=heuristic(name);return{name,h,score:brandScore(h),domains:{},short:false}});render();
+const jobs=[];data.forEach(item=>TLDS.forEach(tld=>jobs.push({item,tld})));let done=0;showProgress(true,0,jobs.length);
+for(let i=0;i<jobs.length;i+=6){await Promise.all(jobs.slice(i,i+6).map(async j=>{j.item.domains[j.tld]=await rdap(norm(j.item.name)+"."+j.tld);done++;showProgress(true,done,jobs.length);render()}))}
+showProgress(false);scanning=false;btn.disabled=false;btn.textContent="Scan & Score";render()}
+function render(){const sort=document.getElementById("sort").value,arr=[...data].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="domain"?domainOpportunity(b)-domainOpportunity(a)||b.score-a.score:b.score-a.score);document.getElementById("count").textContent=arr.length+" names scanned";
+document.getElementById("results").innerHTML=arr.length?arr.map((x,i)=>{const[rec,cls]=recommendation(x.score),h=x.h,winner=i===0&&sort==="score";return `<div class="card ${winner?"winner":""}"><div class="top"><div><div class="rank">#${i+1} ${winner?"🏆":""}</div><div class="name">${esc(x.name)}</div><div class="rec ${cls}">${rec}</div></div><div class="score">${x.score.toFixed(1)}<small>/10</small></div></div>
+<div class="badges"><span class="badge">Brand score: ${x.score.toFixed(1)}</span><span class="badge">Instagram: MANUAL</span><span class="badge">Competition: HEURISTIC</span></div>
+<div class="bars">${bar("Memorability",h.memorable)}${bar("Pronunciation",h.pronounce)}${bar("Uniqueness",h.uniqueness)}${bar("India fit",h.india)}${bar("Expansion",h.expansion)}${bar("Brandability",h.brandability)}</div>
+<div class="domain-box"><div class="domain-head"><b>🌐 Domain opportunities</b><span class="note">RDAP signal</span></div>${TLDS.map(t=>domainRow(x,t)).join("")}<div class="callout"><b>Domain opportunity:</b> ${bestDomain(x)}</div></div>
+<div class="note"><b>Why:</b> ${reason(x,h)}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter names and scan them.</div>'}
 function domainRow(x,t){const d=norm(x.name)+"."+t,s=x.domains?.[t]||"CHECKING",c=s==="AVAILABLE"?"available":s==="REGISTERED"?"registered":"unknown",l=s==="AVAILABLE"?"AVAILABLE":s==="REGISTERED"?"REGISTERED":"CHECK";return `<div class="domain-row"><span class="domain-name">${d}</span><span class="status ${c}">${l}</span><a class="domain-btn" href="${namecheapUrl(d)}" target="_blank" rel="noopener">Check ${t} →</a></div>`}
-function bestDomain(x){const a=TLDS.find(t=>x.domains?.[t]==="AVAILABLE"),u=TLDS.find(t=>x.domains?.[t]==="UNKNOWN");if(a)return `<strong>${norm(x.name)}.${a}</strong> <span class="available">is showing as available</span>`;if(u)return `<strong>${norm(x.name)}.${u}</strong> <span class="unknown">needs confirmation</span>`;return `<span class="registered">No checked TLD is currently showing as available</span>`}
-function reason(x,h){const p=[];if(h.india>=9)p.push("strong India/Hinglish fit");if(h.memorable>=9)p.push("easy to remember");if(h.expansion>=9)p.push("can expand beyond one content format");if(h.uniqueness>=8)p.push("reasonably distinctive");if(domainOpportunity(x)>=10)p.push("at least one checked domain appears available");return p.slice(0,3).join("; ")||"needs stronger differentiation or more verification"}
+function bestDomain(x){const a=TLDS.find(t=>x.domains?.[t]==="AVAILABLE"),u=TLDS.find(t=>x.domains?.[t]==="UNKNOWN");if(a)return `<b>${norm(x.name)}.${a}</b> <span class="available">is showing as available</span>`;if(u)return `<b>${norm(x.name)}.${u}</b> <span class="unknown">needs confirmation</span>`;if(TLDS.some(t=>x.domains?.[t]))return `<span class="registered">No checked TLD is showing as available</span>`;return `<span class="unknown">checking…</span>`}
+function reason(x,h){const p=[];if(h.india>=9)p.push("strong India/Hinglish fit");if(h.memorable>=9)p.push("easy to remember");if(h.expansion>=9)p.push("can expand beyond one format");if(h.uniqueness>=8)p.push("reasonably distinctive");if(domainOpportunity(x)>=10)p.push("a checked domain appears available");return p.slice(0,3).join("; ")||"needs stronger differentiation or verification"}
 function bar(l,v){return `<div><span>${l}</span><span class="bar"><span class="fill" style="width:${v*10}%"></span></span><strong>${v}</strong></div>`}
-function toggleShort(n){const x=data.find(a=>a.name===n);if(x)x.short=!x.short;render()}
-function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
-function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}
-function generatePool(){document.getElementById("names").value=pool.join("\n")}
-function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function showProgress(show,done=0,total=1){const w=document.getElementById("progressWrap");if(!show){w.style.display="none";return}w.style.display="block";document.getElementById("progressText").textContent=`Checking domains… ${done} of ${total}`;document.getElementById("progressBar").style.width=(done/total*100)+"%"}
-</script>
-</body>
-</html>
+function toggleShort(n){const x=data.find(a=>a.name===n);if(x)x.short=!x.short;render()}function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
+function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}function generatePool(){document.getElementById("names").value=pool.join("\n")}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function showProgress(show,done=0,total=1){const w=document.getElementById("progressWrap");if(!show){w.style.display="none";return}w.style.display="block";document.getElementById("progressText").textContent=`Checking domains… ${done} of ${total}`;document.getElementById("progressBar").style.width=done/total*100+"%"}
+</script></body></html>
