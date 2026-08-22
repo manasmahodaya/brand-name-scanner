@@ -40,7 +40,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .mini-tag{display:inline-block;padding:4px 7px;border-radius:999px;background:#eee9df;font-size:10px;font-weight:900;margin-right:5px}
 .compare-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -56,25 +56,25 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
   </div>
   <div class="context-input">
     <textarea id="businessContext" style="min-height:85px" placeholder="Tell us in one sentence what you're building. Example: A home bakery selling customised cakes in Indore."></textarea>
-    <div class="context-status" id="contextStatus">Context: Small Business</div>
+    <div class="context-status" id="contextStatus">Selected: Small Business</div>
   </div>
 </div>
 
 <div class="panel" style="margin-top:18px">
-<b>2. What names are you considering?</b><textarea id="names" placeholder="One name per line, e.g.&#10;DhyaanSe&#10;RukoZara&#10;DekhLe&#10;Sunta&#10;Nazar"></textarea>
-<div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="generatePool()">Load 30 Indian/Hinglish candidates</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
-<div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
+<b>2. What names are you considering?</b><div class="context-status">Enter your own 3–10 names, one per line. Sunta will not suggest names here.</div><textarea id="names" placeholder="Enter your names, one per line.&#10;Example:&#10;MyBrand&#10;GharSe&#10;TadkaBox"></textarea>
+<div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
+<div class="note">Enter 3–10 names of your own. The examples in the box are only placeholders; Sunta will scan only the names you enter.</div><div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
 <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
 <div class="toolbar"><div><b id="count">No results yet</b><div class="note" style="margin-top:3px">Shortlist 2–5 names to compare the finalists.</div></div><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
 <div id="compareWrap" class="compare-wrap" style="display:none">
   <div id="comparePanel"></div>
 </div>
 
-<div id="results" class="grid"><div class="panel empty">Enter names and scan them.</div></div>
+<div id="results" class="grid"><div class="panel empty">Enter your own names above and scan them.</div></div>
 <footer>Sunta scores are heuristic brand-readiness signals. Context fit refines suitability but does not replace the core brand score. Domain status is not legal/trademark clearance. Domain availability can change and should be confirmed at the registrar.</footer>
 </div>
 <script>
-const pool=["Sunta","SuntaListen","SuntaListenHook","DhyaanSe","Nazar","Pakad","RukJa","RukoZara","DekhLe","SunLe","SochLe","BaatPakad","NazarPakad","DhyaanIQ","TadkaAI","KyaScene","RokTok","PakadLe","Chaska","BaatWise","DekhZara","AngleIQ","Snapline","Stopline","ScrollIQ","HookPilot","HookWise","HookScore","StoryTadka","BaatLab","ContentJugaad","IdeaPakad"],TLDS=["com","in","ai","co"];let data=[],scanning=false;
+const TLDS=["com","in","ai","co"];let data=[],scanning=false;
 const norm=s=>s.trim().replace(/[^a-zA-Z0-9]/g,"").toLowerCase();
 function heuristic(name){
   const n=norm(name), l=n.length;
@@ -206,7 +206,17 @@ function contextAwareScore(x){
   return Math.round((x.score*0.85+cf.fit*0.15)*10)/10;
 }
 
-async function scan(){if(scanning)return;const names=[...new Set(document.getElementById("names").value.split(/\n|,/).map(x=>x.trim()).filter(Boolean))].slice(0,30);if(!names.length)return;scanning=true;const btn=document.getElementById("scanBtn");btn.disabled=true;btn.textContent="Scanning…";
+async function scan(){
+if(scanning)return;
+const names=[...new Set((document.getElementById("names").value||"")
+  .split(/[\\n,]+/)
+  .map(s=>s.trim())
+  .filter(Boolean))].slice(0,10);
+if(!names.length){
+  document.getElementById("results").innerHTML='<div class="panel empty">Please enter at least 1 name before scanning.</div>';
+  document.getElementById("names").focus();
+  return;
+}scanning=true;const btn=document.getElementById("scanBtn");btn.disabled=true;btn.textContent="Scanning…";
 data=names.map(name=>{const h=heuristic(name);const base=brandScore(h);const item={name,h,score:base,baseScore:base,domains:{},short:false};contextAwareScore(item);item.score=Math.round((item.baseScore*0.85+item.contextFit*0.15)*10)/10;return item;});render();
 const jobs=[];data.forEach(item=>TLDS.forEach(tld=>jobs.push({item,tld})));let done=0;showProgress(true,0,jobs.length);
 for(let i=0;i<jobs.length;i+=6){await Promise.all(jobs.slice(i,i+6).map(async j=>{j.item.domains[j.tld]=await rdap(norm(j.item.name)+"."+j.tld);done++;showProgress(true,done,jobs.length);render()}))}
@@ -323,12 +333,12 @@ document.getElementById("results").innerHTML=arr.length?arr.map((x,i)=>{const[re
 <div class="badges"><span class="badge">Brand score: ${x.score.toFixed(1)}</span><span class="badge">Context fit: ${(x.contextFit||8).toFixed(1)}</span><span class="badge">Instagram: MANUAL</span><span class="badge">Competition: HEURISTIC</span></div>
 <div class="bars">${bar("Memorability",h.memorable)}${bar("Pronunciation",h.pronounce)}${bar("Uniqueness",h.uniqueness)}${bar("India fit",h.india)}${bar("Expansion",h.expansion)}${bar("Brandability",h.brandability)}</div>
 <div class="domain-box"><div class="domain-head"><b>🌐 Domain opportunities</b><span class="note">RDAP signal</span></div>${TLDS.map(t=>domainRow(x,t)).join("")}<div class="callout"><b>Domain opportunity:</b> ${bestDomain(x)}</div></div>
-<div class="note"><b>Why:</b> ${reason(x,h)}. <b>Context:</b> ${x.contextNote||"Add your business context for a more relevant suitability assessment."}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter names and scan them.</div>';updateCompareUI()}
+<div class="note"><b>Why:</b> ${reason(x,h)}. <b>Context:</b> ${x.contextNote||"Add your business context for a more relevant suitability assessment."}</div><div class="actions"><button class="secondary" onclick="openSearch('${esc(x.name)}')">Research</button><button class="secondary" onclick="toggleShort('${esc(x.name)}')">${x.short?"✓ Shortlisted":"＋ Shortlist"}</button></div></div>`}).join(""):'<div class="panel empty">Enter your own names above and scan them.</div>';updateCompareUI()}
 function domainRow(x,t){const d=norm(x.name)+"."+t,s=x.domains?.[t]||"CHECKING",c=s==="AVAILABLE"?"available":s==="REGISTERED"?"registered":"unknown",l=s==="AVAILABLE"?"AVAILABLE":s==="REGISTERED"?"REGISTERED":"CHECK";return `<div class="domain-row"><span class="domain-name">${d}</span><span class="status ${c}">${l}</span><a class="domain-btn" href="${namecheapUrl(d)}" target="_blank" rel="noopener">Check ${t} →</a></div>`}
 function bestDomain(x){const a=TLDS.find(t=>x.domains?.[t]==="AVAILABLE"),u=TLDS.find(t=>x.domains?.[t]==="UNKNOWN");if(a)return `<b>${norm(x.name)}.${a}</b> <span class="available">is showing as available</span>`;if(u)return `<b>${norm(x.name)}.${u}</b> <span class="unknown">needs confirmation</span>`;if(TLDS.some(t=>x.domains?.[t]))return `<span class="registered">No checked TLD is showing as available</span>`;return `<span class="unknown">checking…</span>`}
 function reason(x,h){const p=[];if(h.india>=9)p.push("strong India/Hinglish fit");if(h.memorable>=9)p.push("easy to remember");if(h.expansion>=9)p.push("can expand beyond one format");if(h.uniqueness>=8)p.push("reasonably distinctive");if(domainOpportunity(x)>=10)p.push("a checked domain appears available");return p.slice(0,3).join("; ")||"needs stronger differentiation or verification"}
 function bar(l,v){return `<div><span>${l}</span><span class="bar"><span class="fill" style="width:${v*10}%"></span></span><strong>${v}</strong></div>`}
 function toggleShort(n){const x=data.find(a=>a.name===n);if(x)x.short=!x.short;render()}function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
-function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}function generatePool(){document.getElementById("names").value=pool.join("\n")}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function showProgress(show,done=0,total=1){const w=document.getElementById("progressWrap");if(!show){w.style.display="none";return}w.style.display="block";document.getElementById("progressText").textContent=`Checking domains… ${done} of ${total}`;document.getElementById("progressBar").style.width=done/total*100+"%"}
 </script></body></html>
