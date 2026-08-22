@@ -25,8 +25,66 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 <script>
 const pool=["Sunta","SuntaListen","SuntaListenHook","DhyaanSe","Nazar","Pakad","RukJa","RukoZara","DekhLe","SunLe","SochLe","BaatPakad","NazarPakad","DhyaanIQ","TadkaAI","KyaScene","RokTok","PakadLe","Chaska","BaatWise","DekhZara","AngleIQ","Snapline","Stopline","ScrollIQ","HookPilot","HookWise","HookScore","StoryTadka","BaatLab","ContentJugaad","IdeaPakad"],TLDS=["com","in","ai","co"];let data=[],scanning=false;
 const norm=s=>s.trim().replace(/[^a-zA-Z0-9]/g,"").toLowerCase();
-function heuristic(name){const n=norm(name),l=n.length,v=(n.match(/[aeiou]/g)||[]).length/Math.max(l,1),rep=/(.)\1/.test(n);let memorable=l>=4&&l<=12?9:6;if(rep||v<.2||v>.65)memorable=7;return{pronounce:l>=5&&l<=11?9:(l===4||l===12?8:6),memorable,expansion:/(hook|instagram|reel|tiktok|content)/i.test(n)?6:9,india:/(sunta|ruk|dhyaan|nazar|pakad|baat|dekh|sun|soch|tadka|jugaad|chaska|kya|zara|rok)/i.test(n)?10:6,uniqueness:["nazar","pakad","sunta","hook","score","snap","story","content","angle"].includes(n)?5:/(ai|iq|lab|wise|pilot|line)$/i.test(n)?7:9,brandability:l>=5&&l<=11&&v>=.25&&v<=.6?9:7}}
-function brandScore(h){return Math.min(10,Math.max(0,h.memorable*.22+h.pronounce*.18+h.uniqueness*.20+h.india*.15+h.expansion*.13+h.brandability*.12))}
+function heuristic(name){
+  const n=norm(name), l=n.length;
+  const vowels=(n.match(/[aeiou]/g)||[]).length;
+  const v=vowels/Math.max(l,1);
+  const repeated=/(.)\1/.test(n);
+  const hardClusters=/([^aeiou]{4,})/.test(n);
+  const hasNumbers=/\d/.test(n);
+  const generic=["hook","score","snap","story","content","angle","nazar","pakad","sunta"].includes(n);
+  const familiar=/(sunta|sunle|dhyaan|ruk|ruko|zara|dekh|nazar|pakad|baat|soch|tadka|jugaad|chaska|kya|rok)/i.test(n);
+  const formatSpecific=/(hook|reel|instagram|tiktok|content)/i.test(n);
+
+  let pronounce = l>=5 && l<=10 ? 9 : l===4 || l===11 ? 8 : l<=3 ? 6 : 5;
+  if(hardClusters) pronounce-=2;
+  if(v<.2 || v>.7) pronounce-=1;
+  pronounce=Math.max(3,Math.min(10,pronounce));
+
+  let memorable = l>=5 && l<=9 ? 9 : l===4 || l===10 ? 8 : l<=12 ? 7 : 5;
+  if(repeated) memorable-=1;
+  if(generic) memorable-=2;
+  if(familiar) memorable+=1;
+  memorable=Math.max(3,Math.min(10,memorable));
+
+  let uniqueness = generic ? 5 : 8;
+  if(l<=4) uniqueness-=1;
+  if(formatSpecific) uniqueness-=1;
+  if(/(ai|iq|lab|wise|pilot|line)$/.test(n)) uniqueness-=1;
+  if(!familiar && !generic) uniqueness+=1;
+  uniqueness=Math.max(3,Math.min(10,uniqueness));
+
+  const india = familiar ? 10 : 6;
+  const expansion = formatSpecific ? 5 : 9;
+
+  let brandability = 8;
+  if(l<5 || l>11) brandability-=2;
+  if(hasNumbers) brandability-=2;
+  if(hardClusters) brandability-=1;
+  if(generic) brandability-=1;
+  if(familiar) brandability+=1;
+  brandability=Math.max(3,Math.min(10,brandability));
+
+  return {pronounce,memorable,expansion,india,uniqueness,brandability};
+}
+
+/* Differentiated score: no single heuristic dominates, and generic/format-specific names are penalized. */
+function brandScore(h){
+  const raw =
+    h.memorable*0.25 +
+    h.pronounce*0.18 +
+    h.uniqueness*0.20 +
+    h.india*0.12 +
+    h.expansion*0.12 +
+    h.brandability*0.13;
+  return Math.round(Math.max(3,Math.min(10,raw))*10)/10;
+}
+
+function recommendation(s){
+  return s>=9?["BUY","green"]:s>=8?["SHORTLIST","green"]:s>=7?["INVESTIGATE","orange"]:["REJECT","red"];
+}
+
+function domainOpportunity(h){return Math.min(10,Math.max(0,h.memorable*.22+h.pronounce*.18+h.uniqueness*.20+h.india*.15+h.expansion*.13+h.brandability*.12))}
 function statusScore(s){return s==="AVAILABLE"?10:s==="REGISTERED"?3:6}function domainOpportunity(x){return Math.max(...TLDS.map(t=>statusScore(x.domains?.[t])))}function recommendation(s){return s>=9?["BUY","green"]:s>=8?["SHORTLIST","green"]:s>=7?["INVESTIGATE","orange"]:["REJECT","red"]}
 async function rdap(domain){const c=new AbortController(),timer=setTimeout(()=>c.abort(),4500);try{const r=await fetch("https://rdap.org/domain/"+encodeURIComponent(domain),{headers:{Accept:"application/rdap+json"},signal:c.signal});if(r.status===404)return"AVAILABLE";if(r.ok)return"REGISTERED";return"UNKNOWN"}catch(e){return"UNKNOWN"}finally{clearTimeout(timer)}}
 const namecheapUrl=d=>"https://www.namecheap.com/domains/registration/results.aspx?domain="+encodeURIComponent(d);
