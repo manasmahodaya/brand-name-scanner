@@ -40,7 +40,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .mini-tag{display:inline-block;padding:4px 7px;border-radius:999px;background:#eee9df;font-size:10px;font-weight:900;margin-right:5px}
 .compare-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.2</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.3</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -61,7 +61,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 </div>
 
 <div class="panel" style="margin-top:18px">
-<b>2. What names are you considering?</b><div class="context-status">Enter your own 3–10 names, one per line. Sunta will not suggest names here.</div><textarea id="names" placeholder="Enter your names, one per line.&#10;Example:&#10;MyBrand&#10;GharSe&#10;TadkaBox"></textarea>
+<b>2. What names are you considering?</b><div class="context-status">Enter your own 1–10 names, one per line or separated by commas. Sunta will keep each multi-word name together.</div><textarea id="names" placeholder="Enter your names, one per line.&#10;Example:&#10;MyBrand&#10;GharSe&#10;TadkaBox"></textarea>
 <div class="row"><button id="scanBtn" class="primary" onclick="scan()">Scan & Score</button><button class="secondary" onclick="copyShortlist()">Copy shortlist</button></div>
 <div class="note">Enter 3–10 names of your own. The examples in the box are only placeholders; Sunta will scan only the names you enter.</div><div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
 <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
@@ -209,7 +209,7 @@ function contextAwareScore(x){
 async function scan(){
 if(scanning)return;
 const names=[...new Set((document.getElementById("names").value||"")
-  .split(/[\\n,]+/)
+  .split(/[\n,]+/)
   .map(s=>s.trim())
   .filter(Boolean))].slice(0,10);
 if(!names.length){
