@@ -62,6 +62,20 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .report-list{margin:6px 0 0 18px;padding:0;font-size:12px;line-height:1.5}
 .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
 .report-note{font-size:10px;color:var(--muted);margin-top:12px;line-height:1.4}
+.feedback-box{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#fbfaf7}
+.feedback-title{font-size:15px;font-weight:900;margin-bottom:3px}
+.feedback-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+.feedback-field{margin-top:10px}
+.feedback-field label{display:block;font-size:11px;font-weight:900;margin-bottom:5px}
+.feedback-options{display:flex;gap:8px;flex-wrap:wrap}
+.feedback-option{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:white;font-size:11px;font-weight:700;cursor:pointer}
+.feedback-option input{width:auto;margin-right:5px}
+.feedback-field textarea,.feedback-field input,.feedback-field select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px;font:12px Arial;background:white}
+.feedback-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.feedback-success{padding:10px 12px;border-radius:9px;background:#edf8f1;color:var(--good);font-size:12px;font-weight:800}
+.feedback-error{padding:10px 12px;border-radius:9px;background:#fff1f0;color:var(--bad);font-size:12px}
+@media(max-width:700px){.feedback-grid{grid-template-columns:1fr}}
+
 @media(max-width:700px){.report-grid{grid-template-columns:1fr 1fr}}
 @media print{
   body{background:white}
@@ -70,7 +84,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
   #reportWrap{display:block!important}
 }
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.6 Decision Report</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.7 Validation</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -403,7 +417,80 @@ function buildDecisionReport(items){
     <div class="report-actions">
       <button class="primary" onclick="copyDecisionReport()">Copy Report</button>
       <button class="secondary" onclick="window.print()">Print / Save PDF</button>
+      <button class="secondary" onclick="toggleFeedback()">Give 60-sec Feedback</button>
     </div>
+
+    <div id="feedbackBox" class="feedback-box" style="display:none">
+      <div class="feedback-title">Help me improve Sunta</div>
+      <div class="feedback-sub">You just used Sunta — I'd genuinely value your feedback. No payment or signup required.</div>
+
+      <form name="sunta-feedback-live" onsubmit="submitFeedback(event)">
+        <input type="hidden" name="form-name" value="sunta-feedback">
+        <div style="display:none">
+          <label>Don't fill this out if you're human: <input name="bot-field"></label>
+        </div>
+        <input type="hidden" name="winner" value="${esc(winner.name)}">
+        <input type="hidden" name="shortlist" value="${esc(items.map(x=>x.name).join(", "))}">
+        <input type="hidden" name="business-type" value="${esc(context.type)}">
+
+        <div class="feedback-field">
+          <label>1. Did Sunta help you decide between your names? *</label>
+          <div class="feedback-options">
+            <label class="feedback-option"><input type="radio" name="helpful" value="Yes" required> Yes</label>
+            <label class="feedback-option"><input type="radio" name="helpful" value="Somewhat"> Somewhat</label>
+            <label class="feedback-option"><input type="radio" name="helpful" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="feedback-field">
+          <label>2. What was most useful? *</label>
+          <select name="most-useful" required>
+            <option value="">Choose one</option>
+            <option>Name scoring</option>
+            <option>Domain intelligence</option>
+            <option>Shortlisting</option>
+            <option>Compare My Shortlist</option>
+            <option>Decision Report</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="feedback-field">
+          <label>3. What was confusing, unnecessary, or missing?</label>
+          <textarea name="missing" rows="3" placeholder="Tell me honestly — this is early and I'm improving it."></textarea>
+        </div>
+
+        <div class="feedback-field">
+          <label>4. Would you use Sunta again? *</label>
+          <div class="feedback-options">
+            <label class="feedback-option"><input type="radio" name="again" value="Definitely" required> Definitely</label>
+            <label class="feedback-option"><input type="radio" name="again" value="Maybe"> Maybe</label>
+            <label class="feedback-option"><input type="radio" name="again" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="feedback-field">
+          <label>5. Would you pay for a more detailed Decision Report? *</label>
+          <div class="feedback-options">
+            <label class="feedback-option"><input type="radio" name="paid" value="Yes" required> Yes</label>
+            <label class="feedback-option"><input type="radio" name="paid" value="Maybe"> Maybe</label>
+            <label class="feedback-option"><input type="radio" name="paid" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="feedback-field">
+          <label>Your name or email (optional)</label>
+          <input name="contact" placeholder="Optional">
+        </div>
+
+        <div class="feedback-actions">
+          <button class="primary" type="submit">Send Feedback</button>
+          <button class="secondary" type="button" onclick="toggleFeedback()">Close</button>
+        </div>
+        <div id="feedbackStatus" style="margin-top:10px"></div>
+      </form>
+    </div>
+
     <div class="report-note">Sunta is a naming decision-support tool. Domain availability and other signals are automated indicators and should be confirmed with the relevant registrar and appropriate trademark/legal checks before launch.</div>
   </div>`;
 }
@@ -497,5 +584,47 @@ function toggleShort(n){
   render();
 }function copyShortlist(){const s=data.filter(x=>x.short).sort((a,b)=>b.score-a.score).map(x=>`${x.name} — ${x.score.toFixed(1)}/10`).join("\n");navigator.clipboard.writeText(s||"No shortlisted names yet.")}
 function openSearch(n){window.open("https://www.google.com/search?q="+encodeURIComponent('"'+n+'" brand'),"_blank")}function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function toggleFeedback(){
+  const box=document.getElementById("feedbackBox");
+  if(!box)return;
+  box.style.display=box.style.display==="none"?"block":"none";
+  if(box.style.display==="block")box.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+async function submitFeedback(e){
+  e.preventDefault();
+  const form=e.target;
+  const status=document.getElementById("feedbackStatus");
+  status.innerHTML='<div class="note">Sending feedback…</div>';
+  try{
+    const body=new URLSearchParams(new FormData(form)).toString();
+    const r=await fetch("/",{
+      method:"POST",
+      headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body
+    });
+    if(!r.ok)throw new Error("Submission failed");
+    form.reset();
+    status.innerHTML='<div class="feedback-success">Thank you — your feedback has been recorded. 🙏</div>';
+  }catch(err){
+    status.innerHTML='<div class="feedback-error">I could not send that just now. Please try again.</div>';
+  }
+}
+
 function showProgress(show,done=0,total=1){const w=document.getElementById("progressWrap");if(!show){w.style.display="none";return}w.style.display="block";document.getElementById("progressText").textContent=`Checking domains… ${done} of ${total}`;document.getElementById("progressBar").style.width=done/total*100+"%"}
-</script></body></html>
+</script>
+<form name="sunta-feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" style="display:none">
+  <input type="hidden" name="form-name" value="sunta-feedback">
+  <input name="bot-field">
+  <input name="helpful">
+  <input name="most-useful">
+  <input name="missing">
+  <input name="again">
+  <input name="paid">
+  <input name="contact">
+  <input name="winner">
+  <input name="shortlist">
+  <input name="business-type">
+</form>
+</body></html>
