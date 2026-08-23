@@ -44,8 +44,33 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 .compare-cta{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .compare-cta strong{font-size:14px}
 .compare-cta .note{margin-top:2px}
+
+.report-panel{background:var(--card);border:2px solid var(--accent);border-radius:16px;padding:18px;margin-top:14px}
+.report-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.report-title{font-size:21px;font-weight:900}
+.report-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.report-winner{margin-top:15px;padding:15px;border-radius:13px;background:#f7f1e8;border:1px solid var(--line)}
+.report-winner-name{font-size:25px;font-weight:900;margin-top:4px}
+.report-score{font-size:17px;font-weight:900}
+.report-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:13px}
+.report-box{border:1px solid var(--line);border-radius:11px;padding:11px;background:var(--card)}
+.report-box b{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
+.report-box span{font-weight:900}
+.report-section{margin-top:15px}
+.report-section h4{margin:0 0 7px;font-size:14px}
+.report-section p{margin:5px 0;font-size:12px;line-height:1.45}
+.report-list{margin:6px 0 0 18px;padding:0;font-size:12px;line-height:1.5}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.report-note{font-size:10px;color:var(--muted);margin-top:12px;line-height:1.4}
+@media(max-width:700px){.report-grid{grid-template-columns:1fr 1fr}}
+@media print{
+  body{background:white}
+  .report-panel{border:0;box-shadow:none}
+  .report-actions,.report-note,.compare-wrap,.toolbar,.row,button{display:none!important}
+  #reportWrap{display:block!important}
+}
 </style></head><body><div class="wrap">
-<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.5 Sprint 2.5</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
+<div class="hero"><div><h1>Sunta</h1><div class="sub"><b>Brand Name Scanner</b> — score names, compare brand fit and check domain opportunities.</div></div><div><b>V1.6 Decision Report</b><br><span class="note">Stable scoring + Domain Intelligence</span></div></div>
 
 <div class="panel context-panel">
   <div class="context-title">1. What are you naming?</div>
@@ -71,6 +96,7 @@ button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:poin
 <div class="note">Enter 3–10 names of your own. The examples in the box are only placeholders; Sunta will scan only the names you enter.</div><div class="note">Brand score is calculated independently from domain lookups. Domain status is an automated signal and must be confirmed at the registrar.</div>
 <div id="progressWrap" style="display:none"><div class="note" id="progressText">Checking domains…</div><div class="progress"><span id="progressBar"></span></div></div></div>
 <div class="toolbar"><div><b id="count">No results yet</b><div class="note" style="margin-top:3px">Shortlist 2–5 names. Sunta will offer a side-by-side comparison when you're ready.</div></div><select id="sort" onchange="render()"><option value="score">Sort: score</option><option value="domain">Sort: domain opportunity</option><option value="context">Sort: context fit</option><option value="name">Sort: name</option></select></div>
+<div id="reportWrap" class="compare-wrap" style="display:none"><div id="reportPanel"></div></div>
 <div id="compareWrap" class="compare-wrap" style="display:none">
   <div id="comparePanel"></div>
 </div>
@@ -309,11 +335,118 @@ function comparisonView(items){
         <div class="view-row"><b>But:</b> ${tradeoff}</div>
         <div class="view-row"><span class="mini-tag">Recommendation, not a verdict</span> Sunta provides the evidence and trade-offs. You make the final decision.</div>
       </div>
-      <div class="compare-actions">
+      <div class="compare-actions"><button class="secondary" onclick="showDecisionReport()">Create Decision Report</button>
         <button class="primary" onclick="openSearch('${esc(winner.name)}')">Research ${esc(winner.name)} →</button>
         <button class="secondary" onclick="copyShortlist()">Copy shortlist</button>
       </div>
     </div>`;
+}
+
+
+function buildDecisionReport(items){
+  if(!items.length)return "";
+  const winner=items.reduce((a,b)=>b.score>a.score?b:a,items[0]);
+  const context=getBusinessContext();
+  const sorted=[...items].sort((a,b)=>b.score-a.score);
+  const runner=sorted.find(x=>x.name!==winner.name);
+  const avgContext=items.reduce((s,x)=>s+Number(x.contextFit||8),0)/items.length;
+  const bestDomain=items.some(x=>domainLabel(x)==="Strong")?"Strong":domainLabel(winner);
+
+  let reason="It has the strongest overall balance across the current Sunta signals.";
+  if(Number(winner.contextFit||0)>=9) reason="It combines a strong overall brand score with a particularly good fit for the business you described.";
+  else if(Number(winner.h.expansion||0)>=9) reason="It has strong expansion potential, giving the brand room to grow beyond the initial offer.";
+
+  let tradeoff="No major trade-off identified against the current shortlist.";
+  if(runner){
+    if(Number(runner.h.pronounce||0)>Number(winner.h.pronounce||0)+0.4)
+      tradeoff=runner.name+" is easier to pronounce, so it may be preferable if simplicity is the priority.";
+    else if(Number(runner.h.memorable||0)>Number(winner.h.memorable||0)+0.4)
+      tradeoff=runner.name+" is slightly more memorable, so it remains a strong alternative.";
+    else if(Number(runner.contextFit||0)>Number(winner.contextFit||0)+0.4)
+      tradeoff=runner.name+" has a stronger contextual fit, so it could become the better choice if your positioning changes.";
+    else
+      tradeoff=runner.name+" is the closest alternative and is worth keeping as the backup.";
+  }
+
+  const names=items.map(x=>esc(x.name)).join(", ");
+  const contextLine=context.description
+    ? "Business description: “"+esc(context.description)+"”"
+    : "Business type: "+esc(context.type);
+
+  return `<div class="report-panel">
+    <div class="report-head">
+      <div><div class="report-title">Decision Report</div><div class="report-sub">${items.length} shortlisted names · ${contextLine}</div></div>
+      <button class="secondary" onclick="closeDecisionReport()">Close</button>
+    </div>
+    <div class="report-winner">
+      <div class="mini-tag">SUNTA'S RECOMMENDATION</div>
+      <div class="report-winner-name">${esc(winner.name)}</div>
+      <div class="report-score">${Number(winner.score).toFixed(1)}/10</div>
+      <p>${reason}</p>
+    </div>
+    <div class="report-grid">
+      <div class="report-box"><b>Shortlist</b><span>${items.length} names</span></div>
+      <div class="report-box"><b>Average context fit</b><span>${avgContext.toFixed(1)}/10</span></div>
+      <div class="report-box"><b>Domain signal</b><span>${esc(bestDomain)}</span></div>
+    </div>
+    <div class="report-section">
+      <h4>Why this name</h4><p>${reason}</p>
+      <ul class="report-list">
+        <li>Overall Sunta score: <b>${Number(winner.score).toFixed(1)}/10</b></li>
+        <li>Memorability: <b>${Number(winner.h.memorable||0).toFixed(1)}/10</b></li>
+        <li>India / Hinglish fit: <b>${Number(winner.h.india||0).toFixed(1)}/10</b></li>
+        <li>Expansion potential: <b>${Number(winner.h.expansion||0).toFixed(1)}/10</b></li>
+      </ul>
+    </div>
+    <div class="report-section"><h4>Key trade-off</h4><p>${esc(tradeoff)}</p></div>
+    <div class="report-section"><h4>Names considered</h4><p>${names}</p></div>
+    <div class="report-actions">
+      <button class="primary" onclick="copyDecisionReport()">Copy Report</button>
+      <button class="secondary" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <div class="report-note">Sunta is a naming decision-support tool. Domain availability and other signals are automated indicators and should be confirmed with the relevant registrar and appropriate trademark/legal checks before launch.</div>
+  </div>`;
+}
+
+function showDecisionReport(){
+  const items=shortlisted();
+  if(items.length<2)return;
+  const wrap=document.getElementById("reportWrap");
+  const panel=document.getElementById("reportPanel");
+  wrap.style.display="block";
+  panel.innerHTML=buildDecisionReport(items.slice(0,5));
+  wrap.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function closeDecisionReport(){
+  document.getElementById("reportWrap").style.display="none";
+  document.getElementById("reportPanel").innerHTML="";
+}
+
+function decisionReportText(){
+  const items=shortlisted();
+  if(!items.length)return "";
+  const winner=items.reduce((a,b)=>b.score>a.score?b:a,items[0]);
+  const context=getBusinessContext();
+  return [
+    "SUNTA — DECISION REPORT","",
+    "Recommended name: "+winner.name,
+    "Sunta score: "+Number(winner.score).toFixed(1)+"/10",
+    "Business type: "+context.type,
+    context.description ? "Business description: "+context.description : "",
+    "",
+    "Shortlisted names:",
+    ...items.slice(0,5).map(x=>"- "+x.name+" — "+Number(x.score).toFixed(1)+"/10"),
+    "",
+    "Recommendation: "+winner.name,
+    "This is a decision-support recommendation, not legal or trademark clearance."
+  ].filter(Boolean).join("\n");
+}
+
+async function copyDecisionReport(){
+  const text=decisionReportText();
+  try{await navigator.clipboard.writeText(text);alert("Decision Report copied.");}
+  catch(e){window.prompt("Copy your Decision Report:",text);}
 }
 
 function updateCompareUI(){
